@@ -1,0 +1,2159 @@
+@import "tailwindcss";
+
+/* The scrollcraft engine's stylesheet, unmodified. It owns the mechanism:
+   .sc-stage, .sc-copy, .sc-scrim, and every [data-sc-*] selector. Nothing
+   below restyles those. Everything below re-themes it through the six colour
+   tokens and two font tokens, which is the supported way to rebrand it. */
+@import "./scrollcraft.css";
+
+/* =================================================================
+   WOODY'S BAR-B-QUE — design floor
+   Token vocabulary follows scrollcraft's references/taste.md.
+   Six colour roles, two families, a 4px spacing base, one radius scale.
+   ================================================================= */
+
+:root {
+  /* --- ground: dark is the page default --- */
+  --sc-canvas: #0b0908;
+  --sc-surface: #16110f;
+  --sc-raised: #1e1815;
+
+  /* --- ink. Light-on-dark, so metrics are compensated below. --- */
+  --sc-ink: #f7f1e7;
+  --sc-ink-soft: #b5a898;
+
+  /* --- the fire accent, two stops of one family ---
+     Oxblood is the structural accent: it fills. At 1.6:1 on the canvas it is
+     never a text or control colour on a dark ground.
+     Ember owns exactly one role, the Since-1975 line, plus the focus ring,
+     where it measures 8.4:1. That is a reserved role, not confetti. */
+  --sc-accent: #7a1f1e;
+  --sc-accent-hot: #9a2a26;
+  --sc-accent-ink: #f7f1e7;
+  --sc-ember: #f49523;
+  --sc-ember-dim: #b8701a;
+
+  /* --- hairlines and edges --- */
+  --sc-line: rgb(247 241 231 / 0.13);
+  --sc-line-strong: rgb(247 241 231 / 0.26);
+  --sc-control-line: rgb(247 241 231 / 0.42);
+  --sc-edge: rgb(247 241 231 / 0.07);
+
+  /* --- spacing, 4px base --- */
+  --sc-1: 0.25rem;
+  --sc-2: 0.5rem;
+  --sc-3: 0.75rem;
+  --sc-4: 1rem;
+  --sc-5: 1.5rem;
+  --sc-6: 2rem;
+  --sc-7: 3rem;
+  --sc-8: 4rem;
+  --sc-9: 6rem;
+  --sc-10: 8rem;
+  --sc-11: 11rem;
+
+  /* Section padding is fluid: a phone must not inherit desktop air. */
+  --sc-section: clamp(3.5rem, 9vw, 8.5rem);
+  --sc-gutter: clamp(1.25rem, 5vw, 4rem);
+  --sc-measure: 62ch;
+  --sc-max: 1320px;
+
+  /* --- type --- */
+  --sc-font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --sc-font-text: var(--font-archivo), system-ui, -apple-system, sans-serif;
+
+  --sc-t-xs: 0.78rem;
+  --sc-t-sm: 0.875rem;
+  --sc-t-base: 1.0625rem;
+  --sc-t-md: clamp(1.15rem, 1.6vw, 1.4rem);
+  --sc-t-lg: clamp(1.6rem, 3vw, 2.4rem);
+  --sc-t-xl: clamp(2.1rem, 5vw, 3.4rem);
+  /* Kept below the hero's own ramp at every width. The H1 is constrained by a
+     copy column while section headings span the full measure, so a steeper
+     ramp here would silently outgrow the H1 between 1024 and 1440. */
+  --sc-t-2xl: clamp(2.4rem, 4.6vw, 4rem);
+  --sc-t-3xl: clamp(3rem, 9vw, 6rem);
+
+  /* Tracking tightens as size grows. Optical correction, not decoration. */
+  --sc-track-display: -0.028em;
+  --sc-track-display-lg: -0.034em;
+  --sc-track-normal: 0.004em;
+  --sc-track-label: 0.13em;
+
+  /* --- radius: one scale, held. Signage is square. --- */
+  --sc-r: 2px;
+  --sc-r-lg: 3px;
+
+  /* --- depth: three steps and no more, tinted to the canvas hue --- */
+  --sc-e1: 0 1px 2px rgb(6 4 3 / 0.5);
+  --sc-e2: 0 6px 18px -6px rgb(6 4 3 / 0.62), 0 2px 5px rgb(6 4 3 / 0.4);
+  --sc-e3: 0 22px 55px -18px rgb(6 4 3 / 0.78), 0 6px 16px rgb(6 4 3 / 0.45);
+
+  --sc-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+  color-scheme: dark;
+}
+
+/* -----------------------------------------------------------------
+   The light ground, used by Scene 3 and any paper section.
+   taste.md: redefining --sc-ink on a subtree does NOT re-ink inherited
+   text, because `color` resolves as a computed value. `color` must be
+   restated on the same subtree or the section renders bone-on-paper.
+   ----------------------------------------------------------------- */
+.ground-paper {
+  --sc-canvas: #f2ece1;
+  --sc-surface: #e8e0d2;
+  --sc-raised: #ffffff;
+  --sc-ink: #17120e;
+  --sc-ink-soft: #5a5148;
+  --sc-accent-ink: #f7f1e7;
+  --sc-line: rgb(23 18 14 / 0.15);
+  --sc-line-strong: rgb(23 18 14 / 0.3);
+  --sc-control-line: rgb(23 18 14 / 0.45);
+  --sc-edge: rgb(255 255 255 / 0.6);
+  --sc-ember-dim: #8a4d0c;
+  --sc-e1: 0 1px 2px rgb(60 40 24 / 0.12);
+  --sc-e2: 0 6px 18px -6px rgb(60 40 24 / 0.18), 0 2px 5px rgb(60 40 24 / 0.1);
+  --sc-e3: 0 22px 55px -18px rgb(60 40 24 / 0.26), 0 6px 16px rgb(60 40 24 / 0.14);
+  color: var(--sc-ink);
+  background: var(--sc-canvas);
+  color-scheme: light;
+}
+
+/* =================================================================
+   Base
+   ================================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--sc-canvas);
+  color: var(--sc-ink);
+  font-family: var(--sc-font-text);
+  font-size: var(--sc-t-base);
+  /* Light on dark needs compensation on three axes: leading, tracking, weight. */
+  line-height: 1.7;
+  letter-spacing: var(--sc-track-normal);
+  font-weight: 400;
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+.ground-paper {
+  /* Dark ink on paper does not need the compensation, so take it back. */
+  line-height: 1.65;
+  font-weight: 380;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--sc-font-display);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: var(--sc-track-display);
+  text-wrap: balance;
+  margin: 0;
+}
+
+p {
+  text-wrap: pretty;
+  margin: 0;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 0.22em;
+  text-decoration-thickness: 1px;
+}
+
+/* --- browser surfaces: the cheapest signal a page was built --- */
+::selection {
+  background: var(--sc-accent);
+  color: var(--sc-ink);
+}
+
+.ground-paper ::selection {
+  background: var(--sc-accent);
+  color: #f7f1e7;
+}
+
+:root {
+  caret-color: var(--sc-ember);
+  scrollbar-color: var(--sc-accent) var(--sc-canvas);
+  scrollbar-width: thin;
+  accent-color: var(--sc-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--sc-ember);
+  outline-offset: 3px;
+  border-radius: var(--sc-r);
+}
+
+.ground-paper :focus-visible {
+  outline-color: var(--sc-accent);
+}
+
+/* =================================================================
+   Layout primitives
+   ================================================================= */
+
+.wrap {
+  width: 100%;
+  max-width: var(--sc-max);
+  margin-inline: auto;
+  padding-inline: var(--sc-gutter);
+}
+
+.wrap--narrow {
+  max-width: 900px;
+}
+
+.scene {
+  position: relative;
+  padding-block: var(--sc-section);
+  background: var(--sc-canvas);
+  /* Every chapter lands on its own ground and holds it. Hard cuts, not
+     interpolation: this is what makes the seven scenes read as cuts. */
+  isolation: isolate;
+}
+
+.scene--surface {
+  background: var(--sc-surface);
+}
+
+.scene--tight {
+  padding-block: calc(var(--sc-section) * 0.62);
+}
+
+/* More space above a heading than below it. The gap belongs to the boundary. */
+.scene__head {
+  margin-bottom: var(--sc-6);
+}
+
+.scene__head > * + * {
+  margin-top: var(--sc-4);
+}
+
+/* =================================================================
+   Type components
+   ================================================================= */
+
+.display {
+  font-family: var(--sc-font-display);
+  font-weight: 700;
+  line-height: 1.02;
+}
+
+.display--3xl {
+  font-size: var(--sc-t-3xl);
+  letter-spacing: var(--sc-track-display-lg);
+}
+
+.display--2xl {
+  font-size: var(--sc-t-2xl);
+  letter-spacing: var(--sc-track-display-lg);
+}
+
+.display--xl {
+  font-size: var(--sc-t-xl);
+}
+
+.display--lg {
+  font-size: var(--sc-t-lg);
+  line-height: 1.06;
+}
+
+/* Step the hero down a rung on a phone. --sc-t-3xl floors at 3rem, which is a
+   desktop floor: at 390px it wraps the hero headline to five lines. */
+@media (max-width: 700px) {
+  .display--3xl {
+    font-size: clamp(2.35rem, 11vw, 3rem);
+    line-height: 1.05;
+  }
+}
+
+.lede {
+  font-size: var(--sc-t-md);
+  line-height: 1.6;
+  color: var(--sc-ink-soft);
+  max-width: 46ch;
+}
+
+.body {
+  max-width: var(--sc-measure);
+  color: var(--sc-ink-soft);
+}
+
+.body--ink {
+  color: var(--sc-ink);
+}
+
+/* The signage register: uppercase Archivo, wide tracking, small.
+   This is the third voice without a third family. */
+.label {
+  font-family: var(--sc-font-text);
+  font-size: var(--sc-t-xs);
+  font-weight: 600;
+  letter-spacing: var(--sc-track-label);
+  text-transform: uppercase;
+  color: var(--sc-ink-soft);
+  line-height: 1.4;
+}
+
+.label--ember {
+  color: var(--sc-ember);
+}
+
+.ground-paper .label--ember {
+  color: var(--sc-ember-dim);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* =================================================================
+   Actions
+   ================================================================= */
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sc-2);
+  min-height: 48px;
+  padding: 0.8rem 1.5rem;
+  border-radius: var(--sc-r);
+  font-family: var(--sc-font-text);
+  font-size: var(--sc-t-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background-color 140ms var(--sc-ease-out),
+    border-color 140ms var(--sc-ease-out),
+    color 140ms var(--sc-ease-out),
+    transform 120ms var(--sc-ease-out);
+}
+
+.action:active {
+  transform: translateY(1px);
+}
+
+.action--primary {
+  background: var(--sc-accent);
+  color: var(--sc-accent-ink);
+  box-shadow: var(--sc-e1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .action--primary:hover {
+    background: var(--sc-accent-hot);
+  }
+}
+
+.action--secondary {
+  border-color: var(--sc-control-line);
+  color: var(--sc-ink);
+  background: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .action--secondary:hover {
+    border-color: var(--sc-ink);
+    background: rgb(247 241 231 / 0.06);
+  }
+  .ground-paper .action--secondary:hover {
+    background: rgb(23 18 14 / 0.05);
+  }
+}
+
+/* A text link that behaves like a line of running text, not a button island. */
+.action--text {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  text-transform: none;
+  letter-spacing: var(--sc-track-normal);
+  font-size: var(--sc-t-base);
+  font-weight: 500;
+  color: var(--sc-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--sc-ember);
+  text-decoration-thickness: 1px;
+}
+
+.ground-paper .action--text {
+  text-decoration-color: var(--sc-accent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .action--text:hover {
+    text-decoration-thickness: 2px;
+  }
+}
+
+/* The arrow moves, the label does not. */
+.action__arrow {
+  display: inline-block;
+  transition: transform 160ms var(--sc-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .action:hover .action__arrow {
+    transform: translateX(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action,
+  .action__arrow {
+    transition: none;
+  }
+  .action:active {
+    transform: none;
+  }
+}
+
+/* =================================================================
+   Grain. A flat dark ground bands on real displays.
+   ================================================================= */
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.042;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* =================================================================
+   Reveal: progressive enhancement only.
+   Content is laid out and visible at rest. The hidden start state is
+   applied ONLY when JS is running (html.js, set before paint), so a
+   JS failure leaves every word on the page. Heroes and CTAs never
+   carry [data-reveal] at all.
+   ================================================================= */
+
+/* Entrances are the engine's now: data-sc-in and data-sc-stagger, which fire
+   once on entry via IntersectionObserver and never re-hide. The engine also
+   handles reduced motion for them. What is left here is the guarantee that a
+   page with no scripting at all still shows every word, which the <noscript>
+   block in the layout provides. */
+
+/* =================================================================
+   Skip link
+   ================================================================= */
+
+.skip {
+  position: absolute;
+  left: var(--sc-4);
+  top: var(--sc-4);
+  z-index: 200;
+  transform: translateY(-200%);
+  background: var(--sc-ember);
+  color: #17120e;
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--sc-r);
+  font-weight: 700;
+  font-size: var(--sc-t-sm);
+  text-decoration: none;
+  transition: transform 160ms var(--sc-ease-out);
+}
+
+.skip:focus {
+  transform: translateY(0);
+}
+
+/* =================================================================
+   The bar. Persistent chrome carrying the standing actions.
+   ================================================================= */
+
+:root {
+  --bar-h: 68px;
+}
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition:
+    background-color 220ms var(--sc-ease-out),
+    border-color 220ms var(--sc-ease-out);
+}
+
+.bar.is-lifted {
+  background: rgb(11 9 8 / 0.88);
+  backdrop-filter: blur(12px) saturate(1.1);
+  border-bottom-color: var(--sc-line);
+}
+
+.bar__inner {
+  max-width: var(--sc-max);
+  margin-inline: auto;
+  padding-inline: var(--sc-gutter);
+  min-height: var(--bar-h);
+  display: flex;
+  align-items: center;
+  gap: var(--sc-5);
+}
+
+.bar__mark {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  line-height: 1;
+  margin-right: auto;
+}
+
+.bar__mark-name {
+  font-family: var(--sc-font-display);
+  font-weight: 900;
+  font-size: 1.42rem;
+  letter-spacing: -0.03em;
+  color: #f7f1e7;
+}
+
+.bar__mark-sub {
+  font-family: var(--sc-font-text);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--sc-ember);
+  margin-top: 3px;
+}
+
+.bar__nav ul {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-5);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bar__link {
+  font-size: var(--sc-t-sm);
+  font-weight: 500;
+  color: #d6cabb;
+  text-decoration: none;
+  padding-block: var(--sc-2);
+  position: relative;
+  transition: color 140ms var(--sc-ease-out);
+}
+
+.bar__link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--sc-ember);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms var(--sc-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .bar__link:hover {
+    color: #f7f1e7;
+  }
+  .bar__link:hover::after {
+    transform: scaleX(1);
+  }
+}
+
+.bar__link:focus-visible::after,
+.bar__link[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+.bar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-3);
+}
+
+.bar__burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: transparent;
+  border: 1px solid var(--sc-control-line);
+  border-radius: var(--sc-r);
+  cursor: pointer;
+  color: #f7f1e7;
+}
+
+.burger {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 20px;
+}
+
+.burger i {
+  display: block;
+  height: 1.5px;
+  background: currentColor;
+  transition:
+    transform 200ms var(--sc-ease-out),
+    opacity 160ms var(--sc-ease-out);
+}
+
+.burger.is-open i:first-child {
+  transform: translateY(3.25px) rotate(45deg);
+}
+
+.burger.is-open i:last-child {
+  transform: translateY(-3.25px) rotate(-45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar,
+  .bar__link,
+  .bar__link::after,
+  .burger i {
+    transition: none;
+  }
+}
+
+@media (max-width: 1000px) {
+  .bar__nav {
+    display: none;
+  }
+  .bar__burger {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 480px) {
+  .bar__cta {
+    display: none;
+  }
+}
+
+/* --- the panel --- */
+
+.panel {
+  position: fixed;
+  inset: var(--bar-h) 0 0 0;
+  background: var(--sc-canvas);
+  border-top: 1px solid var(--sc-line);
+  padding: var(--sc-7) var(--sc-gutter) var(--sc-9);
+  overflow-y: auto;
+  z-index: 49;
+}
+
+.panel__list {
+  list-style: none;
+  margin: 0 0 var(--sc-7);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel__list li + li {
+  border-top: 1px solid var(--sc-line);
+}
+
+.panel__link {
+  display: block;
+  padding: var(--sc-4) 0;
+  font-family: var(--sc-font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  color: var(--sc-ink);
+}
+
+.panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-3);
+}
+
+.panel__actions .action {
+  width: 100%;
+}
+
+/* =================================================================
+   The ember rail. Part one of the signature move.
+   ================================================================= */
+
+.ember-rail {
+  position: fixed;
+  left: max(18px, calc((100vw - var(--sc-max)) / 2 - 26px));
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  z-index: 40;
+  pointer-events: none;
+  display: none;
+}
+
+@media (min-width: 1180px) {
+  .ember-rail {
+    display: block;
+  }
+}
+
+.ember-rail__track {
+  position: absolute;
+  inset: 0;
+  background: var(--sc-line);
+}
+
+.ember-rail__lit {
+  position: absolute;
+  inset: 0;
+  transform: scaleY(var(--ember-p, 1));
+  transform-origin: top;
+  background: linear-gradient(
+    to bottom,
+    rgb(122 31 30 / 0.55) 0%,
+    var(--sc-ember-dim) 42%,
+    var(--sc-ember) 100%
+  );
+}
+
+.ember-rail__head {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--ember-p, 1) * 100%);
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: var(--sc-ember);
+  box-shadow:
+    0 0 6px 1px rgb(244 149 35 / 0.5),
+    0 0 14px 3px rgb(244 149 35 / 0.22);
+}
+
+.ember-rail__mark {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: rotate(180deg) translateY(50%);
+  writing-mode: vertical-rl;
+  transform-origin: center;
+  margin-left: -18px;
+  font-family: var(--sc-font-text);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--sc-ink-soft);
+  opacity: 0.55;
+  white-space: nowrap;
+}
+
+/* =================================================================
+   The standing mobile action bar.
+   ================================================================= */
+
+.actionbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  display: none;
+  background: rgb(11 9 8 / 0.94);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--sc-line);
+  padding: var(--sc-2) var(--sc-3)
+    calc(var(--sc-2) + env(safe-area-inset-bottom, 0px));
+}
+
+.actionbar__inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--sc-2);
+  max-width: 640px;
+  margin-inline: auto;
+}
+
+.actionbar__item {
+  width: 100%;
+  padding-inline: 0.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 860px) {
+  .actionbar {
+    display: block;
+  }
+  body {
+    padding-bottom: 78px;
+  }
+  /* Inline text links are still tapped by thumbs. Grow the hit area on touch
+     widths without changing where the text sits. */
+  .action--text,
+  .loc__phone,
+  .bar__mark {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .hero__meta {
+    flex-wrap: wrap;
+  }
+}
+
+/* =================================================================
+   Plate: one image slot, photographic or typeset.
+   ================================================================= */
+
+.plate {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--sc-r);
+  background: var(--sc-raised);
+}
+
+.plate__img {
+  object-fit: cover;
+  object-position: center;
+}
+
+/* A photograph brings its own ground, so the typeset composition's charred
+   gradient is not painted behind it. */
+.plate--photo {
+  background: var(--sc-surface);
+}
+
+/* Readability for a label sitting over a photograph: density only in the lower
+   band where the type is, not a full-frame darkening layer that would flatten
+   the whole image to fix one corner. */
+.plate__veil {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 62%;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgb(8 5 4 / 0.86) 0%,
+    rgb(8 5 4 / 0.58) 34%,
+    rgb(8 5 4 / 0.16) 68%,
+    rgb(8 5 4 / 0) 100%
+  );
+}
+
+/* The typeset state. Not a placeholder box: a composition that says what the
+   frame is for, in the brand's own voice, until real photography lands. */
+.plate--typeset {
+  /* Sized in the box's own terms so a tall frame and a wide one both keep the
+     heat inside the crop. Percentage radials tuned for a wide plate leave a
+     tall one looking like an empty rectangle. */
+  background:
+    radial-gradient(
+      145% 55% at 22% 100%,
+      rgb(146 38 32 / 0.85) 0%,
+      rgb(122 31 30 / 0.35) 45%,
+      rgb(122 31 30 / 0) 78%
+    ),
+    radial-gradient(
+      95% 42% at 82% 4%,
+      rgb(244 149 35 / 0.34) 0%,
+      rgb(244 149 35 / 0) 68%
+    ),
+    linear-gradient(168deg, #2b2119 0%, #1a1310 46%, #0f0b0a 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(247 241 231 / 0.12),
+    inset 0 0 0 1px rgb(247 241 231 / 0.05);
+}
+
+.ground-paper .plate--typeset {
+  background:
+    radial-gradient(
+      120% 90% at 12% 108%,
+      rgb(122 31 30 / 0.9) 0%,
+      rgb(122 31 30 / 0) 64%
+    ),
+    radial-gradient(
+      80% 70% at 88% -12%,
+      rgb(244 149 35 / 0.3) 0%,
+      rgb(244 149 35 / 0) 58%
+    ),
+    linear-gradient(168deg, #2a201b 0%, #17110e 100%);
+}
+
+/* Char grain: a directional texture so the ground reads as a surface, not a
+   gradient. Kept under 5% so it never touches legibility. */
+.plate__char {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  background-image: repeating-linear-gradient(
+      104deg,
+      rgb(255 255 255 / 0.035) 0px,
+      rgb(255 255 255 / 0.035) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    repeating-linear-gradient(
+      12deg,
+      rgb(0 0 0 / 0.16) 0px,
+      rgb(0 0 0 / 0.16) 2px,
+      transparent 2px,
+      transparent 9px
+    ),
+    radial-gradient(130% 130% at 50% 50%, transparent 42%, rgb(6 4 3 / 0.55) 100%);
+}
+
+.plate__inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: var(--sc-3);
+  padding: clamp(1.1rem, 3.5vw, 2.25rem);
+  z-index: 1;
+}
+
+.plate__rule {
+  display: block;
+  width: 34px;
+  height: 2px;
+  background: var(--sc-ember);
+  border-radius: 2px;
+}
+
+.plate__label {
+  font-family: var(--sc-font-display);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: var(--sc-track-display);
+  color: #f7f1e7;
+  text-wrap: balance;
+}
+
+.plate--sm .plate__label {
+  /* Sized to survive the narrowest slot it is used in. "Combination Plate" in
+     a 150px column overflowed its frame at the previous size. */
+  font-size: clamp(0.95rem, 1.5vw, 1.2rem);
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.plate--md .plate__label {
+  font-size: clamp(1.45rem, 3.4vw, 2.15rem);
+}
+
+/* In the Scene 4 triptych a frame is a third of the screen wide on a phone, so
+   the display label has to come down with it or it overruns its own frame. */
+@media (max-width: 859px) {
+  .pitplate__frame .plate__label {
+    font-size: clamp(0.72rem, 2.6vw, 1rem);
+  }
+  .pitplate__frame .plate__inner {
+    padding: var(--sc-2);
+    gap: var(--sc-1);
+  }
+  .pitplate__frame .plate__rule {
+    width: 18px;
+  }
+}
+
+.plate--lg .plate__label {
+  font-size: clamp(2rem, 5.5vw, 3.6rem);
+}
+
+/* Hover only where a pointer exists, and only on a linked plate. */
+@media (hover: hover) and (pointer: fine) {
+  .plate-link .plate__img,
+  .plate-link .plate__char {
+    transition: transform 420ms var(--sc-ease-out);
+  }
+  .plate-link:hover .plate__img,
+  .plate-link:focus-visible .plate__img,
+  .plate-link:hover .plate__char {
+    transform: scale(1.032);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plate-link .plate__img,
+  .plate-link .plate__char {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* =================================================================
+   SCENE 1 · Arrival
+   ================================================================= */
+
+/* Pinned acts: the stage is a 100vh box the engine owns, so the section adds no
+   padding of its own. Its height comes from data-sc-span at runtime. */
+.hero,
+.pit,
+.pitplate,
+.trust {
+  padding-block: 0;
+}
+
+/* A flow section straight after a pinned act: the stage needs a full viewport
+   to scroll off, and full section padding on top of that would delay the first
+   line by another screen. */
+.scene--after-pin {
+  padding-top: calc(var(--sc-section) * 0.55);
+}
+
+.hero__stage {
+  display: block;
+}
+
+.hero__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  height: 100%;
+}
+
+.hero__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--sc-4);
+  padding: var(--sc-8) var(--sc-gutter) var(--sc-7);
+  order: 2;
+}
+
+/* Sized against the copy column rather than the viewport, so each authored
+   line fits on one line. At the shared --sc-t-2xl this headline wrapped to
+   four. Two is the ceiling. */
+.hero__title {
+  margin-top: var(--sc-1);
+  /* Capped so the longer authored line ("Done the Woody's Way.") fits the copy
+     column on one line. Two lines is the ceiling, and it stays a rung above
+     --sc-t-2xl so the H1 still outranks every section heading. */
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.hero__lede {
+  margin-top: var(--sc-2);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-3);
+  margin-top: var(--sc-4);
+}
+
+.hero__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-3);
+  margin-top: var(--sc-2);
+  font-size: var(--sc-t-sm);
+  color: var(--sc-ink-soft);
+}
+
+.hero__dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--sc-ember);
+  flex: none;
+}
+
+.hero__plate {
+  order: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.hero__plate-inner {
+  height: 100%;
+  border-radius: 0;
+}
+
+.hero__plate video[data-sc-scrub] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+@media (min-width: 901px) {
+  .hero__grid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+    align-items: stretch;
+  }
+  .hero__copy {
+    order: 1;
+    padding-block: var(--sc-9);
+    padding-right: var(--sc-7);
+    max-width: 60rem;
+    margin-left: auto;
+    width: 100%;
+  }
+  .hero__plate {
+    order: 2;
+  }
+  .hero__plate-inner {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero__plate-inner {
+    aspect-ratio: 16 / 11 !important;
+  }
+}
+
+/* =================================================================
+   SCENE 2 · Straight From the Pit
+   ================================================================= */
+
+/* The pan rail. Widths are chosen so the rail measurably overflows the
+   viewport: a rail narrower than the screen travels zero pixels and the act
+   becomes a motionless pinned screen, which the harness does not catch.
+   check-rail.mjs measures the real overflow rather than trusting this. */
+.pit__stage {
+  display: flex;
+  align-items: center;
+}
+
+.rail {
+  align-items: center;
+  gap: var(--sc-5);
+  height: 100%;
+  padding-inline: var(--sc-gutter);
+}
+
+.rail > * {
+  flex: none;
+}
+
+.rail__lead {
+  width: clamp(19rem, 30vw, 27rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-4);
+  align-items: flex-start;
+}
+
+.rail__lede {
+  max-width: 24ch;
+}
+
+.rail__link {
+  margin-top: var(--sc-1);
+}
+
+.rail__item {
+  width: clamp(14rem, 21vw, 18.5rem);
+}
+
+/* Items settle in sequence as the rail travels, so it reads as a drawer being
+   pulled rather than a slideshow on rails. The first item is exempt, because a
+   pan act needs its opening content already present. */
+@media (prefers-reduced-motion: no-preference) {
+  .rail__item {
+    opacity: calc(0.55 + var(--sc-p, 1) * 0.9);
+  }
+  .rail > .rail__lead {
+    opacity: 1;
+  }
+}
+
+.rail__note {
+  width: clamp(16rem, 24vw, 20rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-4);
+  align-items: flex-start;
+}
+
+/* Under reduced motion the engine turns the stage into a native scroll region,
+   so the rail stays reachable without any transform. */
+@media (prefers-reduced-motion: reduce) {
+  .pit__stage {
+    align-items: stretch;
+  }
+}
+
+.dish {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.dish__name {
+  display: block;
+  margin-top: var(--sc-3);
+  font-family: var(--sc-font-display);
+  font-size: 1.06rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--sc-ink);
+}
+
+.dish--feature .dish__name {
+  margin-top: var(--sc-4);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dish:hover .dish__name {
+    color: var(--sc-ember);
+  }
+}
+
+/* =================================================================
+   SCENE 3 · The 1975 Story. The trough.
+   ================================================================= */
+
+.story {
+  padding-block: calc(var(--sc-section) * 1.25);
+}
+
+.story__grid {
+  display: grid;
+  gap: var(--sc-8);
+  grid-template-columns: 1fr;
+}
+
+.story__prose {
+  margin-top: var(--sc-6);
+  display: grid;
+  gap: var(--sc-4);
+}
+
+.story__first {
+  font-size: var(--sc-t-md);
+  color: var(--sc-ink);
+  line-height: 1.55;
+}
+
+.story__cta {
+  margin-top: var(--sc-6);
+}
+
+.story__figure {
+  margin: 0;
+}
+
+.story__caption {
+  margin-top: var(--sc-3);
+}
+
+.story__date {
+  margin-top: var(--sc-6);
+  display: flex;
+  flex-direction: column;
+  line-height: 0.86;
+  color: var(--sc-accent);
+}
+
+.story__date-month {
+  font-family: var(--sc-font-text);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: var(--sc-2);
+}
+
+.story__date-year {
+  font-family: var(--sc-font-display);
+  font-size: clamp(4rem, 13vw, 8.5rem);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+@media (min-width: 880px) {
+  .story__grid {
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: var(--sc-10);
+    align-items: start;
+  }
+  .story__text {
+    padding-right: var(--sc-7);
+  }
+}
+
+/* =================================================================
+   SCENE 4 · Pit to Plate. THE PEAK.
+   ================================================================= */
+
+.pitplate {
+  background: linear-gradient(180deg, #0d0a09 0%, var(--sc-canvas) 40%);
+}
+
+.pitplate__stage {
+  display: flex;
+  align-items: center;
+}
+
+.pitplate__inner {
+  width: 100%;
+  max-width: var(--sc-max);
+  margin-inline: auto;
+  padding-inline: var(--sc-gutter);
+}
+
+.pitplate__head {
+  max-width: 44rem;
+  margin-bottom: var(--sc-6);
+}
+
+.pitplate__lede {
+  margin-top: var(--sc-4);
+}
+
+/* Three across at every width. A pinned stage is a fixed 100vh box that clips
+   its overflow, so stacking the frames on a phone pushed the sequence past the
+   clip and left the lede sitting over a plate. Side by side is also the only
+   arrangement in which pit, fire and plate read as one sequence. */
+.pitplate__frames {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sc-2);
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.pitplate__frame figure {
+  margin: 0;
+}
+
+/* Driven from --sc-p, the progress the engine publishes on this act. The
+   fallback of 1 is what makes the sequence complete with no JavaScript.
+
+   Frame one carries no wipe: a pinned stage is fully visible about a viewport
+   before its progress leaves 0, so it is the ground that stops the stage
+   showing empty for that whole travel. Frames two and three are the sequence,
+   and all three are open by p = 0.6 so the peak holds a composed triptych for
+   its last stretch rather than only arriving at the end. */
+.pitplate__frame {
+  --fp: 1;
+}
+
+.pitplate__frame:nth-child(2) {
+  --fp: clamp(0, calc((var(--sc-p, 1) - 0.08) / 0.24), 1);
+}
+
+.pitplate__frame:nth-child(3) {
+  --fp: clamp(0, calc((var(--sc-p, 1) - 0.3) / 0.26), 1);
+}
+
+.pitplate__mask {
+  /* Sized against the stage, which is a fixed 100vh box. Too short and the
+     peak reads as a small frame adrift in an empty screen; too tall on a phone
+     and the sequence is clipped away. */
+  height: clamp(132px, 21vh, 200px);
+  clip-path: inset(0 calc((1 - var(--fp)) * 100%) 0 0);
+  will-change: clip-path;
+}
+
+.pitplate__caption {
+  margin-top: var(--sc-3);
+  opacity: var(--fp);
+}
+
+.pitplate__seam {
+  position: relative;
+  height: 2px;
+  margin-top: var(--sc-6);
+}
+
+.pitplate__seam-track {
+  position: absolute;
+  inset: 0;
+  background: var(--sc-line);
+}
+
+.pitplate__seam-lit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  transform: scaleX(var(--sc-p, 1));
+  transform-origin: left;
+  background: linear-gradient(
+    90deg,
+    rgb(122 31 30 / 0.7) 0%,
+    var(--sc-ember-dim) 46%,
+    var(--sc-ember) 100%
+  );
+  box-shadow: 0 0 10px rgb(244 149 35 / 0.32);
+}
+
+.pitplate__seam-mark {
+  position: absolute;
+  top: var(--sc-3);
+  left: clamp(104px, calc(var(--sc-p, 1) * 100%), 100%);
+  transform: translateX(-100%);
+  padding-right: var(--sc-2);
+  font-family: var(--sc-font-text);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--sc-ember);
+  white-space: nowrap;
+}
+
+.pitplate__facts {
+  list-style: none;
+  margin: var(--sc-8) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-3) var(--sc-6);
+  font-size: var(--sc-t-sm);
+  color: var(--sc-ink-soft);
+}
+
+.pitplate__facts li {
+  position: relative;
+  padding-left: var(--sc-4);
+}
+
+.pitplate__facts li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
+  background: var(--sc-accent);
+  border-radius: 50%;
+}
+
+@media (min-width: 860px) {
+  /* The triptych breaks wider than the text measure. This is the one place on
+     the page where the media outruns the grid, which is part of why the scene
+     reads as the peak. */
+  .pitplate__stage .wrap {
+    max-width: min(1560px, 94vw);
+  }
+  .pitplate__frames {
+    gap: var(--sc-5);
+  }
+  .pitplate__mask {
+    height: clamp(220px, 44vh, 470px);
+  }
+  /* Editorial crop: the centre frame sits lower. */
+  .pitplate__frame:nth-child(2) {
+    transform: translateY(var(--sc-7));
+  }
+  .pitplate__seam {
+    margin-top: var(--sc-6);
+  }
+  .pitplate__facts {
+    margin-top: var(--sc-6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pitplate__mask {
+    will-change: auto;
+  }
+}
+
+/* =================================================================
+   SCENE 5 · The Full Table
+   ================================================================= */
+
+.spread__head {
+  margin-bottom: var(--sc-8);
+}
+
+.spread__head .label {
+  margin-bottom: var(--sc-3);
+}
+
+.spread__grid {
+  display: grid;
+  gap: var(--sc-8);
+  grid-template-columns: 1fr;
+}
+
+.spread__index ul,
+.spread__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.spread__cat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sc-4);
+  padding: var(--sc-3) 0;
+  border-bottom: 1px solid var(--sc-line);
+  text-decoration: none;
+  font-family: var(--sc-font-display);
+  font-size: 1.22rem;
+  font-weight: 700;
+  letter-spacing: -0.018em;
+  color: var(--sc-ink);
+  transition: color 140ms var(--sc-ease-out);
+}
+
+.spread__cat-count {
+  font-family: var(--sc-font-text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sc-ink-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .spread__cat:hover {
+    color: var(--sc-ember);
+  }
+  .spread__cat:hover .spread__cat-count {
+    color: var(--sc-ember);
+  }
+}
+
+.spread__lists {
+  display: grid;
+  gap: var(--sc-6);
+}
+
+.spread__list-title {
+  padding-bottom: var(--sc-2);
+  border-bottom: 1px solid var(--sc-line-strong);
+  margin-bottom: var(--sc-3);
+}
+
+.spread__items li {
+  padding: var(--sc-2) 0;
+  color: var(--sc-ink-soft);
+  font-size: var(--sc-t-sm);
+}
+
+.spread__note {
+  color: var(--sc-ember-dim);
+  font-size: 0.76rem;
+}
+
+.spread__plates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sc-4);
+  align-content: start;
+}
+
+.spread__plate--offset {
+  align-self: end;
+}
+
+.spread__foot {
+  margin-top: var(--sc-8);
+  padding-top: var(--sc-6);
+  border-top: 1px solid var(--sc-line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sc-4);
+}
+
+.spread__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-3);
+}
+
+.spread__caveat {
+  font-size: var(--sc-t-sm);
+  color: var(--sc-ink-soft);
+  max-width: 34ch;
+}
+
+@media (min-width: 900px) {
+  .spread__grid {
+    grid-template-columns: 1fr 0.85fr 0.9fr;
+    gap: var(--sc-7);
+  }
+  .spread__plates {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =================================================================
+   SCENE 6 · What LA Says / Visit
+   ================================================================= */
+
+.trust__stage {
+  display: flex;
+  align-items: center;
+}
+
+.trust__inner {
+  width: 100%;
+}
+
+.trust__title {
+  margin-bottom: var(--sc-6);
+}
+
+/* Both states occupy the same cell and cross over. This is the pinned act
+   doing its job: the frame holds while the argument advances from "other
+   people vouch for this" to "here is where it is". Two columns crossfading
+   would leave half the stage blank at the end of the act. */
+.trust__grid {
+  display: grid;
+  grid-template-areas: "state";
+  align-items: start;
+}
+
+.trust__reviews,
+.trust__visit {
+  grid-area: state;
+  max-width: 54rem;
+}
+
+.trust__intro {
+  margin-bottom: var(--sc-5);
+}
+
+.trust__sources {
+  list-style: none;
+  margin: 0 0 var(--sc-7);
+  padding: 0;
+  display: grid;
+  gap: var(--sc-3);
+}
+
+.source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sc-4);
+  padding: var(--sc-4) var(--sc-5);
+  background: var(--sc-raised);
+  border: 1px solid var(--sc-line);
+  border-radius: var(--sc-r);
+  text-decoration: none;
+  color: var(--sc-ink);
+  font-weight: 500;
+  box-shadow: inset 0 1px 0 var(--sc-edge);
+  transition:
+    border-color 160ms var(--sc-ease-out),
+    transform 160ms var(--sc-ease-out);
+}
+
+.source__arrow {
+  color: var(--sc-ember);
+  transition: transform 160ms var(--sc-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .source:hover {
+    border-color: var(--sc-control-line);
+    transform: translateY(-2px);
+  }
+  .source:hover .source__arrow {
+    transform: translateX(3px);
+  }
+}
+
+.trust__figure {
+  margin: 0;
+}
+
+.trust__caption {
+  margin-top: var(--sc-3);
+}
+
+/* The figure is the first thing to go on a phone: the stage clips its overflow
+   and the two states have to fit a 100vh column between them. */
+@media (max-width: 899px) {
+  .trust__figure {
+    display: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .trust__sources {
+    grid-template-columns: 1fr 1fr;
+    display: grid;
+  }
+}
+
+/* --- location block --- */
+
+.loc__title {
+  margin-bottom: var(--sc-5);
+}
+
+.loc__address {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-1);
+  font-style: normal;
+  font-size: var(--sc-t-md);
+  line-height: 1.5;
+}
+
+.loc__street {
+  color: var(--sc-ink);
+}
+
+.loc__city {
+  color: var(--sc-ink-soft);
+}
+
+.loc__phone {
+  color: var(--sc-ink);
+  margin-top: var(--sc-2);
+  text-decoration-color: var(--sc-ember);
+  width: fit-content;
+}
+
+.loc__hours {
+  margin: var(--sc-6) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--sc-line);
+}
+
+.loc__hours-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sc-4);
+  padding: var(--sc-3) 0;
+  border-bottom: 1px solid var(--sc-line);
+  font-size: var(--sc-t-sm);
+}
+
+.loc__hours-row dt {
+  color: var(--sc-ink-soft);
+}
+
+.loc__hours-row dd {
+  margin: 0;
+  color: var(--sc-ink);
+  text-align: right;
+}
+
+.loc__hours-row--open dd {
+  color: var(--sc-ember);
+}
+
+.loc__caveat {
+  margin-top: var(--sc-4);
+  font-size: var(--sc-t-sm);
+  color: var(--sc-ink-soft);
+}
+
+.loc__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-3);
+  margin-top: var(--sc-6);
+}
+
+/* =================================================================
+   SCENE 7 · The close, the signature, and the footer
+   ================================================================= */
+
+.close {
+  position: relative;
+  padding-top: 0;
+  background: #0d0a09;
+}
+
+.close__plate {
+  position: relative;
+  height: clamp(190px, 28vh, 330px);
+  overflow: hidden;
+  /* The banner meets the page ground on both edges, so it is faded into the
+     canvas rather than cut against it. */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 16%,
+    #000 84%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 16%,
+    #000 84%,
+    transparent 100%
+  );
+}
+
+.close__plate .plate {
+  height: 100%;
+  border-radius: 0;
+}
+
+.close__inner {
+  padding-top: var(--sc-8);
+}
+
+.close__lead {
+  max-width: 44rem;
+}
+
+.close__lede {
+  margin-top: var(--sc-4);
+}
+
+.close__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-3);
+  margin-top: var(--sc-6);
+}
+
+/* --- the signature: part three of the ember line --- */
+
+.sign {
+  /* Trimmed so the close does not out-measure the peak. Scene 4 must hold the
+     most scroll room on the page, and Scene 7 carries the footer inside it. */
+  margin-top: var(--sc-8);
+  padding-bottom: var(--sc-6);
+}
+
+.sign__mark {
+  position: relative;
+  display: inline-block;
+  font-family: var(--sc-font-display);
+  font-weight: 900;
+  font-size: clamp(3rem, 12vw, 7.5rem);
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  color: var(--sc-ink);
+}
+
+.sign__underline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.12em;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--sc-accent) 0%,
+    var(--sc-ember-dim) 40%,
+    var(--sc-ember) 100%
+  );
+  transform: scaleX(var(--ember-p, 1));
+  transform-origin: left;
+  box-shadow: 0 0 12px rgb(244 149 35 / 0.3);
+}
+
+.sign__sub {
+  margin-top: var(--sc-4);
+  color: var(--sc-ember);
+}
+
+/* --- footer, inside the scene --- */
+
+.foot {
+  border-top: 1px solid var(--sc-line);
+  padding-top: var(--sc-7);
+  padding-bottom: var(--sc-7);
+}
+
+.foot__grid {
+  display: grid;
+  gap: var(--sc-7);
+  grid-template-columns: 1fr;
+}
+
+.foot__desc {
+  max-width: 34ch;
+  font-size: var(--sc-t-sm);
+}
+
+.foot__address {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-1);
+  margin-top: var(--sc-4);
+  font-style: normal;
+  font-size: var(--sc-t-sm);
+  color: var(--sc-ink-soft);
+}
+
+.foot__address a {
+  color: var(--sc-ink);
+  width: fit-content;
+}
+
+.foot__heading {
+  margin-bottom: var(--sc-4);
+}
+
+.foot__nav ul,
+.foot__contact ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sc-3);
+  font-size: var(--sc-t-sm);
+}
+
+.foot__nav a,
+.foot__contact a {
+  color: var(--sc-ink-soft);
+  text-decoration: none;
+  transition: color 140ms var(--sc-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .foot__nav a:hover,
+  .foot__contact a:hover {
+    color: var(--sc-ember);
+  }
+}
+
+.foot__legal {
+  margin-top: var(--sc-7);
+  padding-top: var(--sc-5);
+  border-top: 1px solid var(--sc-line);
+  font-size: var(--sc-t-xs);
+  color: var(--sc-ink-soft);
+}
+
+@media (min-width: 780px) {
+  .foot__grid {
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: var(--sc-8);
+  }
+}
+
+/* =================================================================
+   Secondary pages
+   ================================================================= */
+
+.page-head {
+  padding-top: calc(var(--sc-section) * 0.9);
+  padding-bottom: calc(var(--sc-section) * 0.7);
+}
+
+.page-head .label {
+  margin-bottom: var(--sc-3);
+}
+
+.page-head__lede {
+  margin-top: var(--sc-5);
+}
+
+.page-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-3);
+  margin-top: var(--sc-6);
+}
+
+.page-prose > * + * {
+  margin-top: var(--sc-5);
+}
+
+.page-cta {
+  max-width: 44rem;
+}
+
+.page-cta > * + * {
+  margin-top: var(--sc-4);
+}
+
+.page-cta__phone {
+  font-family: var(--sc-font-display);
+  font-size: var(--sc-t-lg);
+  font-weight: 700;
+}
+
+.page-cta__phone a {
+  text-decoration-color: var(--sc-ember);
+}
+
+/* --- menu page --- */
+
+.menucard__list {
+  display: grid;
+  gap: var(--sc-8);
+  grid-template-columns: 1fr;
+}
+
+.menucard__head {
+  padding-bottom: var(--sc-3);
+  border-bottom: 1px solid var(--sc-line-strong);
+  margin-bottom: var(--sc-4);
+}
+
+.menucard__blurb {
+  margin-top: var(--sc-2);
+  font-size: var(--sc-t-sm);
+  color: var(--sc-ink-soft);
+}
+
+.menucard__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menucard__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sc-2) var(--sc-3);
+  padding: var(--sc-3) 0;
+  border-bottom: 1px solid var(--sc-line);
+}
+
+.menucard__name {
+  font-weight: 500;
+  color: var(--sc-ink);
+}
+
+.menucard__desc,
+.menucard__note {
+  font-size: var(--sc-t-sm);
+  color: var(--sc-ink-soft);
+  flex-basis: 100%;
+}
+
+.menucard__note {
+  color: var(--sc-ember-dim);
+}
+
+.menucard__price {
+  margin-left: auto;
+  color: var(--sc-ink-soft);
+}
+
+@media (min-width: 760px) {
+  .menucard__list {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sc-8) var(--sc-9);
+  }
+}
+
+/* --- story page aside --- */
+
+.story__note {
+  margin-top: var(--sc-4);
+  font-size: var(--sc-t-xs);
+  color: var(--sc-ink-soft);
+  max-width: 32ch;
+}
+
+/* --- gallery --- */
+
+.gallery {
+  display: grid;
+  gap: var(--sc-5);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+.gallery__item {
+  margin: 0;
+}
+
+.gallery__caption {
+  margin-top: var(--sc-3);
+  display: block;
+}
+
+@media (min-width: 700px) {
+  .gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1100px) {
+  .gallery {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* =================================================================
+   Anchor offset so the sticky bar never covers a target heading
+   ================================================================= */
+
+[id] {
+  scroll-margin-top: calc(var(--bar-h) + var(--sc-4));
+}
+
+/* =================================================================
+   Utility
+   ================================================================= */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.rule {
+  height: 1px;
+  background: var(--sc-line);
+  border: 0;
+  margin: 0;
+}
